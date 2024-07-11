@@ -3,7 +3,6 @@ from hashlib import md5
 
 
 class UserModel(BaseModel):
-    login: str
     password_hash: str
     username: str
     email: str
@@ -12,18 +11,19 @@ class UserModel(BaseModel):
 class User:
     """
         Описывает объект авторизованного пользователя
-        md5 хэш строки login+password_hash определяет пользователя уникально (uid)
+        md5 хэш строки username+password_hash определяет пользователя уникально (uid)
     """
 
     __user_data: UserModel
     __uid: str
 
-    def __init__(self):
-        ...
+    def __init__(self, data_model_dict: dict):
+        self.__user_data = UserModel(**data_model_dict)
 
-    def __make_uid(self):
-        raw_string = self.__user_data.login + self.__user_data.password_hash
-        self.__uid = md5(raw_string.encode('utf-8')).hexdigest()
+    @staticmethod
+    def make_uid(username: str, password_hash: str):
+        raw_string = username + password_hash
+        return md5(raw_string.encode('utf-8')).hexdigest()
 
     def uid(self):
         return self.__uid
@@ -33,12 +33,15 @@ class User:
 
     def register(self, user_data: UserModel):
         self.__user_data = user_data
-        self.__make_uid()
-
-    def login(self):
-        ...
+        self.__uid = User.make_uid(
+            self.__user_data.username,
+            self.__user_data.password_hash
+        )
 
     def update_profile(self, user_data: UserModel):
         self.__user_data = user_data
-        self.__make_uid()
+        self.__uid = User.make_uid(
+            self.__user_data.username,
+            self.__user_data.password_hash
+        )
         ...
