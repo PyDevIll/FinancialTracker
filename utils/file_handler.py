@@ -1,4 +1,3 @@
-from pydantic import BaseModel
 import json
 
 
@@ -21,14 +20,14 @@ def __read_entire_file_as_dict(f):
         return {}
 
 
-def save_to_file(filename: str, uid: str, data_model: BaseModel):
+def save_to_file(filename: str, uid: str, data_dict: dict):
     with open(filename, 'r', encoding='utf8') as f:
         contents = __read_entire_file_as_dict(f)
 
     if uid not in contents:
         contents[uid] = {}
 
-    contents[uid] = data_model.model_dump()
+    contents[uid] = data_dict
 
     with open(filename, 'w', encoding='utf8') as f:
         f.write(json.dumps(contents, indent=4))

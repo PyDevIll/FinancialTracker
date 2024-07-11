@@ -31,12 +31,16 @@ class User:
     def data_model(self):
         return self.__user_data
 
+    def login(self):
+        ...
+
     def register(self, user_data: UserModel):
-        self.__user_data = user_data
-        self.__uid = User.make_uid(
-            self.__user_data.username,
-            self.__user_data.password_hash
-        )
+        ...
+        # self.__user_data = user_data
+        # self.__uid = User.make_uid(
+        #     self.__user_data.username,
+        #     self.__user_data.password_hash
+        # )
 
     def update_profile(self, user_data: UserModel):
         self.__user_data = user_data

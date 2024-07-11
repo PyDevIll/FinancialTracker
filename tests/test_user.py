@@ -4,18 +4,22 @@ from utils.file_handler import save_to_file
 
 
 def test_user():
-    user = User()
+    user = User({
+        'username': 'John Doe',
+        'password_hash': md5(b'1111').hexdigest(),
+        'email': 'me@gmail.com'
+    })
 
     # user.register
-    user.register(UserModel(
-        username='John Doe',
-        password_hash=md5(b'1111').hexdigest(),
-        email='me@gmail.com'
-    ))
+    # user.register(UserModel(
+    #     username='John Doe',
+    #     password_hash=md5(b'1111').hexdigest(),
+    #     email='me@gmail.com'
+    # ))
     assert user.data_model() == UserModel(
         username='John Doe',
         password_hash=md5(b'1111').hexdigest(),
         email='me@gmail.com'
     )
 
-    save_to_file('../data/users.json', user.uid(), user.data_model())
+    save_to_file('../data/users.json', user.uid(), user.data_model().model_dump())
