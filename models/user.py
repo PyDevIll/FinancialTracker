@@ -1,27 +1,19 @@
 from pydantic import BaseModel
-from typing import List
 from hashlib import md5
 from config.settings import PATH_TO_USERS
 
 from utils.file_handler import read_from_file, save_to_file, delete_from_file, file_contains_key_value
 from utils.file_handler import FileHandlerException
 
-from models.account import Account, AccountModel
 
 class UserModel(BaseModel):
     password_hash: str
     username: str
     email: str
-    account_list: List = []
     primary_account: str = ""
 
 
 class User:
-    """
-        Описывает объект авторизованного пользователя
-        md5 хэш строки username+password_hash определяет пользователя уникально (uid)
-    """
-
     __data: UserModel = None
     __uid: str = ''
     __authorised: bool = False
@@ -36,6 +28,9 @@ class User:
         raw_string = username + password_hash
         return md5(raw_string.encode('utf-8')).hexdigest()
 
+    def __save(self):
+        save_to_file(PATH_TO_USERS, self.__uid, self.__data.model_dump())
+
     def uid(self):
         return self.__uid
 
@@ -49,11 +44,11 @@ class User:
         if self.__uid == '':
             raise Exception("Log in information is not specified")
         try:
-            data_model = read_from_file(PATH_TO_USERS, self.__uid)
+            user_data = read_from_file(PATH_TO_USERS, self.__uid)
         except FileHandlerException as e:
             raise Exception(f'Cannot log in user {self.__data.username}: "{e}"')
 
-        self.__data = UserModel(**data_model)
+        self.__data = UserModel(**user_data)
         self.__authorised = True
 
     def register(self, user_data: UserModel):
@@ -67,27 +62,26 @@ class User:
         self.__uid = self.__make_uid(self.__data.username, self.__data.password_hash)
         if self.__uid == '':
             raise Exception("Log in information should be specified")
-        #      Create primary account
-        new_account = Account(AccountModel(
-            name="Основной счет",
-            user_uid=self.__uid
-        ))
-        self.__data.primary_account = new_account.uid()
-        self.__data.account_list.append(self.__data.primary_account)
+
         self.__authorised = True
+        self.__save()
 
-        save_to_file(PATH_TO_USERS, self.__uid, self.__data.model_dump())
-
-    def update_profile(self, user_data_dict: dict):
+    def update_profile(self, **fields_to_update):
         if not self.__authorised:
             raise Exception("User is not authorised for this operation")
+        updated_model = self.__data.model_dump()
+        try:
+            for key, value in fields_to_update.items():
+                updated_model[key] = value
+        except KeyError:
+            raise Exception("Trying to update unexisted profile field")
 
         prev_uid = self.__uid
-        self.__data = UserModel(**user_data_dict)
+        self.__data = UserModel(**updated_model)
         self.__uid = self.__make_uid(self.__data.username, self.__data.password_hash)
 
         if prev_uid != self.__uid:
             delete_from_file(PATH_TO_USERS, prev_uid)
 
-        save_to_file(PATH_TO_USERS, self.__uid, self.__data.model_dump())
+        self.__save()
 

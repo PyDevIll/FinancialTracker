@@ -39,8 +39,6 @@ def test_user_register_login(login_info, users):
         assert user.data().username == login_info[n]["username"]
         assert user.data().password_hash == login_info[n]["password_hash"]
         assert user.data().email == login_info[n]["email"]
-        assert len(user.data().account_list) == 1
-        assert user.data().primary_account != ''
 
         #       User.login()
         user = User(login_info[n]["username"], login_info[n]["password_hash"])
@@ -48,8 +46,6 @@ def test_user_register_login(login_info, users):
         assert user.data().username == login_info[n]["username"]
         assert user.data().password_hash == login_info[n]["password_hash"]
         assert user.data().email == login_info[n]["email"]
-        assert len(user.data().account_list) == 1
-        assert user.data().primary_account != ''
 
         # register user with same username
     new_user = User()
@@ -73,22 +69,21 @@ def test_user_register_login(login_info, users):
 
 
 def test_user_update_profile(login_info, users):
+    users[0] = User(login_info[0]["username"], login_info[0]["password_hash"])
+    users[0].login()
+    users[1] = User(login_info[1]["username"], login_info[1]["password_hash"])
+    users[1].login()
+
     # uid will change after updating
     prev_id = users[0].uid()
     login_info[0]["password_hash"] = md5(b"my_SUP3RS3C931_pw").hexdigest()
-
-    user_data = users[0].data().model_dump()
-    user_data["password_hash"] = login_info[0]["password_hash"]
-    users[0].update_profile(user_data)
+    users[0].update_profile(password_hash=login_info[0]["password_hash"])
     assert prev_id != users[0].uid()
 
     # uid wouldn't change after updating
     prev_id = users[1].uid()
     login_info[1]["email"] = "pikachu@email.pokemon.com"
-
-    user_data = users[1].data().model_dump()
-    user_data["email"] = login_info[1]["email"]
-    users[1].update_profile(user_data)
+    users[1].update_profile(email=login_info[1]["email"])
     assert prev_id == users[1].uid()
 
     for n in range(2):
@@ -96,8 +91,6 @@ def test_user_update_profile(login_info, users):
         assert users[n].data().username == login_info[n]["username"]
         assert users[n].data().password_hash == login_info[n]["password_hash"]
         assert users[n].data().email == login_info[n]["email"]
-        assert len(users[n].data().account_list) == 1
-        assert users[n].data().primary_account != ''
 
         # check if updated user can be logged back in
         new_user = User(login_info[n]["username"], login_info[n]["password_hash"])
@@ -105,6 +98,4 @@ def test_user_update_profile(login_info, users):
         assert new_user.data().username == login_info[n]["username"]
         assert new_user.data().password_hash == login_info[n]["password_hash"]
         assert new_user.data().email == login_info[n]["email"]
-        assert len(new_user.data().account_list) == 1
-        assert new_user.data().primary_account != ''
 
