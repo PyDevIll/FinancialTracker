@@ -13,16 +13,19 @@ class FileHandlerNoUID(FileHandlerException):
     pass
 
 
-def __read_entire_file_as_dict(f):
+def __read_entire_file_as_dict(filename) -> dict:
     try:
-        return json.loads(f.read())
-    except json.decoder.JSONDecodeError:
-        return {}
+        with open(filename, 'r', encoding='utf8') as f:
+            try:
+                return json.loads(f.read())
+            except json.decoder.JSONDecodeError:
+                return {}
+    except FileNotFoundError:
+        raise FileHandlerNoFile(f'File {filename} not found')
 
 
 def save_to_file(filename: str, uid: str, data_dict: dict):
-    with open(filename, 'r', encoding='utf8') as f:
-        contents = __read_entire_file_as_dict(f)
+    contents = __read_entire_file_as_dict(filename)
 
     if uid not in contents:
         contents[uid] = {}
@@ -34,14 +37,19 @@ def save_to_file(filename: str, uid: str, data_dict: dict):
 
 
 def read_from_file(filename: str, uid: str) -> dict:
-    try:
-        with open(filename, 'r', encoding='utf8') as f:
-            contents = __read_entire_file_as_dict(f)
-    except FileNotFoundError:
-        raise FileHandlerNoFile(f'File {filename} not found')
+    contents = __read_entire_file_as_dict(filename)
 
     if uid not in contents:
         raise FileHandlerNoUID(f'UID "{uid}" is not present in file')
 
     return contents[uid]
 
+
+def delete_from_file(filename: str, uid: str):
+    contents = __read_entire_file_as_dict(filename)
+    if uid not in contents:
+        raise FileHandlerNoUID(f'UID "{uid}" is not present in file')
+
+    del contents[uid]
+    with open(filename, 'w', encoding='utf8') as f:
+        f.write(json.dumps(contents, indent=4))

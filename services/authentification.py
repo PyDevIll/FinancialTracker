@@ -1,14 +1,28 @@
-from models.user import User
-from utils.file_handler import read_from_file, FileHandlerException
+from models.user import User, UserModel
+from hashlib import md5
+
+active_users = {}
 
 
 def login(username, password_hash) -> User:
-    try:
-        data_model = read_from_file(
-            filename='../data/users.json',
-            uid=User.make_uid(username, password_hash),
-        )
-    except FileHandlerException as e:
-        raise Exception(f'Cannot log in user {username}: "{e}"')
+    # global active_users
+    user = User(username, password_hash)
+    user.login()
 
-    return User(data_model)
+    active_users[user.uid()] = user
+    return user
+
+
+def register(username, password, email) -> User:
+    # global active_users
+    #   check for login and email availability  #
+    user = User(username, password)
+    user.register(UserModel(
+        username=username,
+        password_hash=md5(password.encode('utf-8')).hexdigest(),
+        email=email
+    ))
+
+    active_users[user.uid()] = user
+    return user
+
