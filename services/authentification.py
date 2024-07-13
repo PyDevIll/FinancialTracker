@@ -15,7 +15,7 @@ def login(username, password_hash) -> User:
 
 def register(username, password, email) -> User:
     # global active_users
-    #   check for login and email availability  #
+
     user = User(username, password)
     user.register(UserModel(
         username=username,

@@ -18,7 +18,12 @@ def login_info():
             'username': 'Pikachu #25',
             'password_hash': md5(b'pikaP1ka').hexdigest(),
             'email': 'pokemon@email.pokemon.com'
-        }
+        },
+        {
+            'username': 'John Doe',
+            'password_hash': md5(b'ImNewUser111').hexdigest(),
+            'email': 'him@gmail.com'
+        },
     ]
 
 
@@ -49,6 +54,26 @@ def test_user_register_login(login_info, users):
             account_list=[],
             primary_account=""
         )
+
+    # register user with same username
+    new_user = User()
+    with pytest.raises(Exception) as e:
+        new_user.register(UserModel(**login_info[2]))
+
+    assert str(e.value) == f'Username "{login_info[2]["username"]}" already in use'
+    assert not new_user.is_authorised()
+    assert new_user.data_model() is None
+
+    # register user with same email
+    new_user = User()
+    login_info[2]["username"] = "Jane Dowe"
+    login_info[2]["email"] = "me@gmail.com"
+    with pytest.raises(Exception) as e:
+        new_user.register(UserModel(**login_info[2]))
+
+    assert str(e.value) == f'Email "{login_info[2]["email"]}" already registered by another user'
+    assert not new_user.is_authorised()
+    assert new_user.data_model() is None
 
 
 def test_user_update_profile(login_info, users):

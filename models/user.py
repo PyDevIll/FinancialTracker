@@ -1,8 +1,10 @@
 from pydantic import BaseModel
 from typing import List
 from hashlib import md5
+from config.settings import PATH_TO_USERS
 
-from utils.file_handler import read_from_file, save_to_file, delete_from_file, FileHandlerException
+from utils.file_handler import read_from_file, save_to_file, delete_from_file, file_contains_key_value
+from utils.file_handler import FileHandlerException
 
 
 class UserModel(BaseModel):
@@ -19,7 +21,7 @@ class User:
         md5 хэш строки username+password_hash определяет пользователя уникально (uid)
     """
 
-    __user_data: UserModel
+    __user_data: UserModel = None
     __uid: str = ''
     __authorised: bool = False
 
@@ -39,11 +41,14 @@ class User:
     def data_model(self):
         return self.__user_data
 
+    def is_authorised(self):
+        return self.__authorised
+
     def login(self):
         if self.__uid == '':
             raise Exception("Log in information is not specified")
         try:
-            data_model = read_from_file(filename='data/users.json', uid=self.__uid)
+            data_model = read_from_file(PATH_TO_USERS, self.__uid)
         except FileHandlerException as e:
             raise Exception(f'Cannot log in user {self.__user_data.username}: "{e}"')
 
@@ -51,6 +56,12 @@ class User:
         self.__authorised = True
 
     def register(self, user_data: UserModel):
+        #       проверка на использование занятого username или email
+        if file_contains_key_value(PATH_TO_USERS, 'username', user_data.username):
+            raise Exception(f'Username "{user_data.username}" already in use')
+        if file_contains_key_value(PATH_TO_USERS, 'email', user_data.email):
+            raise Exception(f'Email "{user_data.email}" already registered by another user')
+
         self.__user_data = user_data
         self.__uid = self.__make_uid(self.__user_data.username, self.__user_data.password_hash)
         if self.__uid == '':
@@ -58,7 +69,7 @@ class User:
         #   Create primary account  #
         self.__authorised = True
 
-        save_to_file('data/users.json', self.__uid, self.__user_data.model_dump())
+        save_to_file(PATH_TO_USERS, self.__uid, self.__user_data.model_dump())
 
     def update_profile(self, user_data_dict: dict):
         if not self.__authorised:
@@ -69,7 +80,7 @@ class User:
         self.__uid = self.__make_uid(self.__user_data.username, self.__user_data.password_hash)
 
         if prev_uid != self.__uid:
-            delete_from_file('data/users.json', prev_uid)
+            delete_from_file(PATH_TO_USERS, prev_uid)
 
-        save_to_file('data/users.json', self.__uid, self.__user_data.model_dump())
+        save_to_file(PATH_TO_USERS, self.__uid, self.__user_data.model_dump())
 

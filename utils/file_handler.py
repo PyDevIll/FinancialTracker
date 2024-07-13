@@ -53,3 +53,16 @@ def delete_from_file(filename: str, uid: str):
     del contents[uid]
     with open(filename, 'w', encoding='utf8') as f:
         f.write(json.dumps(contents, indent=4))
+
+
+def file_contains_key_value(filename: str, key, value):
+    """
+        Возвращает uid где встречается пара ключ-значение.
+        Для проверки существования login'а или email'а при регистрации нового пользователя.
+    """
+    contents = __read_entire_file_as_dict(filename)
+    for _uid in contents:
+        _value = contents[_uid].get(key, None)
+        if _value == value:
+            return _uid
+    return None
