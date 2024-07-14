@@ -1,4 +1,5 @@
 import json
+import os
 
 
 class FileHandlerException(Exception):
@@ -25,7 +26,10 @@ def __read_entire_file_as_dict(filename) -> dict:
 
 
 def save_to_file(filename: str, uid: str, data_dict: dict):
-    contents = __read_entire_file_as_dict(filename)
+    try:
+        contents = __read_entire_file_as_dict(filename)
+    except FileHandlerNoFile:
+        contents = {}
 
     if uid not in contents:
         contents[uid] = {}
@@ -66,3 +70,11 @@ def file_contains_key_value(filename: str, key, value):
         if _value == value:
             return _uid
     return None
+
+
+def rename_file(filename: str, new_filename: str):
+    contents = __read_entire_file_as_dict(filename)
+    with open(new_filename, 'w', encoding='utf8') as f:
+        f.write(json.dumps(contents, indent=4))
+
+    os.remove(filename)

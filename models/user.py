@@ -34,6 +34,9 @@ class User:
     def uid(self):
         return self.__uid
 
+    def primary_account(self):
+        return self.__data.primary_account
+
     def data(self):
         return self.__data
 
@@ -84,4 +87,5 @@ class User:
             delete_from_file(PATH_TO_USERS, prev_uid)
 
         self.__save()
-
+        # If password changed - User.uid() changes as well.
+        # Account file named with User.uid should be renamed

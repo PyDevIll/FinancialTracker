@@ -1,23 +1,32 @@
 from models.user import User, UserModel
+from models.account import Account, AccountModel
 from hashlib import md5
 
-# holds User instances for logged in users. Indexed by User.uid
+# Dict that holds User instances for logged in users. Indexed by User.uid
 active_users = {}
-# holds Account instances dicts (indexed by Account.uid) for active_users. Indexed by User.uid
-user_accounts = {}
+# Dict that holds Account instances dicts (indexed by Account.uid) for active_users. Indexed by User.uid
+active_user_accounts = {}
 
 
 def login(username, password_hash) -> User:
     user = User(username, password_hash)
     user.login()
 
+    # load associated primary account
+    account = Account(AccountModel(
+        owner_uid=user.uid()
+    ))
+    account.load(user.primary_account())
+
     active_users[user.uid()] = user
+    if user.uid() not in active_user_accounts:
+        active_user_accounts[user.uid()] = {}
+    active_user_accounts[user.uid()][account.uid()] = account
+
     return user
 
 
 def register(username, password, email) -> User:
-    # create primary account and pass its uid to user.register
-
     user = User(username, password)
     user.register(UserModel(
         username=username,
@@ -25,6 +34,16 @@ def register(username, password, email) -> User:
         email=email,
         primary_account=''
     ))
+    account = Account(AccountModel(
+        owner_uid=user.uid(),
+        name="Основной счет"
+    ))
+    user.update_profile(primary_account=account.uid())
+
     active_users[user.uid()] = user
+    if user.uid() not in active_user_accounts:
+        active_user_accounts[user.uid()] = {}
+    active_user_accounts[user.uid()][account.uid()] = account
+
     return user
 
