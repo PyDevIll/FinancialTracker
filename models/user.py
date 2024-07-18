@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from hashlib import md5
-from config.settings import PATH_TO_USERS
+from config.settings import PATH_TO_USERS, PATH_TO_ACCOUNTS
 
-from utils.file_handler import read_from_file, save_to_file, delete_from_file, file_contains_key_value
+from utils.file_handler import read_from_file, save_to_file, delete_from_file, file_contains_key_value, rename_file
 from utils.file_handler import FileHandlerException
 
 
@@ -33,6 +33,9 @@ class User:
 
     def uid(self):
         return self.__uid
+
+    def username(self):
+        return self.__data.username
 
     def primary_account(self):
         return self.__data.primary_account
@@ -83,9 +86,35 @@ class User:
         self.__data = UserModel(**updated_model)
         self.__uid = self.__make_uid(self.__data.username, self.__data.password_hash)
 
+        # If password changed - User.uid() changes as well.
         if prev_uid != self.__uid:
-            delete_from_file(PATH_TO_USERS, prev_uid)
+            self.__uid_changed(prev_uid)
 
         self.__save()
-        # If password changed - User.uid() changes as well.
-        # Account file named with User.uid should be renamed
+
+    def __uid_changed(self, prev_uid):
+        delete_from_file(PATH_TO_USERS, prev_uid)
+
+        # Account file named with User.uid should be renamed.
+        rename_file(
+            PATH_TO_ACCOUNTS + prev_uid + '.json',
+            PATH_TO_ACCOUNTS + self.__uid + '.json'
+        )
+
+        # owner_uid should be replaced with new one for all accounts in user accounts file
+        from services.account_management import load_account
+        while True:
+            acc_uid = file_contains_key_value(
+                PATH_TO_ACCOUNTS + self.__uid + '.json',
+                'owner_uid', prev_uid
+            )
+            if acc_uid is None:
+                break
+
+            account = load_account(self.__uid, acc_uid)
+            account.update(owner_uid=self.__uid)
+
+
+
+    def logout(self):
+        self.__authorised = False
