@@ -6,6 +6,7 @@ def test_account_create():
     user = User('My Name', "abcxyz")
     account = Account(AccountModel(
         owner_uid=user.uid(),
+        owner_username=user.username(),
         name="Основной счет"
     ))
     account.save()
@@ -17,7 +18,8 @@ def test_account_create():
 
     # Account.load()
     new_account = Account(AccountModel(
-        owner_uid=user.uid()
+        owner_uid=user.uid(),
+        owner_username=user.username()
     ))
     new_account.load(account.uid())
 

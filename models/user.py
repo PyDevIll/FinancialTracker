@@ -9,7 +9,7 @@ from utils.file_handler import FileHandlerException
 class UserModel(BaseModel):
     password_hash: str
     username: str
-    email: str
+    email: str = ''
     primary_account: str = ""
 
 
@@ -33,6 +33,10 @@ class User:
 
     def __init__(self, username: str = '', password_hash: str = ''):
         self.__uid = self.__make_uid(username, password_hash)
+        self.__data = UserModel(
+            username=username,
+            password_hash=password_hash
+        )
 
     def __make_uid(self, username, password_hash) -> str:
         if (username == '') or (password_hash == ''):

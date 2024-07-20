@@ -54,7 +54,6 @@ def test_user_register_login(login_info, users):
 
     assert str(e.value) == f'Username "{login_info[2]["username"]}" already in use'
     assert not new_user.is_authorised()
-    assert new_user.data() is None
 
     # register user with same email
     new_user = User()
@@ -65,7 +64,6 @@ def test_user_register_login(login_info, users):
 
     assert str(e.value) == f'Email "{login_info[2]["email"]}" already registered by another user'
     assert not new_user.is_authorised()
-    assert new_user.data() is None
 
 
 def test_user_update_profile(login_info, users):

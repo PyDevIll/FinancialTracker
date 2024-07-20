@@ -14,6 +14,7 @@ class Currency(str, Enum):
 
 class AccountModel(BaseModel):
     owner_uid: str
+    owner_username: str = ''
     uid: str = ''
     name: str = ''
     balance: float = 0.0
@@ -28,11 +29,15 @@ class Account:
         self.__data.uid = uuid4().hex
 
     def save(self):
-        save_to_file(PATH_TO_ACCOUNTS + self.__data.owner_uid + '.json', self.__data.uid, self.__data.model_dump())
+        save_to_file(
+            PATH_TO_ACCOUNTS + self.__data.owner_username + '_accounts.json',
+            self.__data.uid,
+            self.__data.model_dump()
+        )
 
     def load(self, uid: str):
         try:
-            account_model = read_from_file(PATH_TO_ACCOUNTS + self.__data.owner_uid + '.json', uid)
+            account_model = read_from_file(PATH_TO_ACCOUNTS + self.__data.owner_username + '_accounts.json', uid)
         except FileHandlerException as e:
             raise Exception(f'Cannot load account info: "{e}"')
 

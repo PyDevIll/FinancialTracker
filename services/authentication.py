@@ -5,20 +5,27 @@ from services.account_management import create_account, load_account, unload_use
 active_users = {}
 
 
+def active_user(user_uid) -> User:
+    try:
+        return active_users[user_uid]
+    except KeyError:
+        raise Exception("Trying to access not logged in user")
+
+
 def login(username, password_hash) -> User:
     user = User(username, password_hash)
     user.login()
     active_users[user.uid()] = user
 
     # load associated primary account
-    load_account(user.uid(), user.primary_account())
+    load_account(user.uid(), user.username(), user.primary_account())
 
     return user
 
 
 def register(username, password_hash, email) -> User:
     user = User(username, password_hash)
-    account = create_account(user.uid(), "Основной счет")
+    account = create_account(user.uid(), user.username(), "Основной счет")
     user.register(
         username=username,
         password_hash=password_hash,
@@ -31,11 +38,7 @@ def register(username, password_hash, email) -> User:
 
 
 def update_user_profile(user_uid, **fields_to_update) -> User:
-
-    try:
-        user: User = active_users[user_uid]
-    except KeyError:
-        raise Exception("User that's being updated is not logged in")
+    user = active_user(user_uid)
 
     prev_user_uid = user.uid()
     username = user.username()
@@ -45,7 +48,7 @@ def update_user_profile(user_uid, **fields_to_update) -> User:
     # accounts are reloaded during user logout-login seq
     # logout-login required to refresh active_users dict
     if prev_user_uid != user.uid():
-        update_user_accounts(prev_user_uid, owner_uid=user.uid())
+        update_user_accounts(prev_user_uid, username, owner_uid=user.uid())
         logout(prev_user_uid)
         user = login(username, fields_to_update["password_hash"])
 
