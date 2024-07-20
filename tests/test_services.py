@@ -26,16 +26,16 @@ def test_login():
 def test_update_user_info():
     # поменять пароль пользователя и проверить загружаемость пользователя и счетов
     # переименуется ли файл со счетами?
-    global user
+    # global user
+
+    user = login('Somebody Someone', md5(b'123456Zz').hexdigest())
     _account = active_accounts[user.uid()][user.primary_account()]
     _old_user_uid = user.uid()
 
-    update_user_profile(user.uid(), password_hash=md5(b'better_password:x&8w-8gGb=@_p{]d').hexdigest())
+    user = update_user_profile(user.uid(), password_hash=md5(b'better_password:x&8w-8gGb=@_p{]d').hexdigest())
 
     assert _old_user_uid != user.uid()
-    assert not user.is_authorised()
 
-    user = login('Somebody Someone', md5(b'better_password:x&8w-8gGb=@_p{]d').hexdigest())
     assert len(active_users) == 1
     assert active_users[user.uid()].username() == 'Somebody Someone'
 

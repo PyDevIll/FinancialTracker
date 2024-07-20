@@ -1,5 +1,6 @@
 from models.account import Account, AccountModel, Currency
-from models.user import User
+from utils.file_handler import read_entire_file_as_dict
+from config.settings import PATH_TO_ACCOUNTS
 
 # Dict that holds Account instances dicts for active_users. Indexed by [User.uid][Account.uid]
 active_accounts = {}
@@ -35,6 +36,16 @@ def load_account(user_uid, account_uid) -> Account:
     return _account
 
 
+def load_all_accounts(user_uid):
+    all_accounts = read_entire_file_as_dict(PATH_TO_ACCOUNTS + user_uid + '.json')
+    for acc_uid, acc_data in all_accounts.items():
+        load_account(user_uid, acc_uid)
+
+
 def unload_user_accounts(user_uid):
     del active_accounts[user_uid]
 
+
+def update_user_accounts(user_uid, **fields_to_update):
+    for acc_uid, account in active_accounts[user_uid].items():
+        account.update(**fields_to_update)

@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from hashlib import md5
-from config.settings import PATH_TO_USERS, PATH_TO_ACCOUNTS
+from config.settings import PATH_TO_USERS
 
-from utils.file_handler import read_from_file, save_to_file, delete_from_file, file_contains_key_value, rename_file
+from utils.file_handler import read_from_file, save_to_file, delete_from_file, file_contains_key_value
 from utils.file_handler import FileHandlerException
 
 
@@ -11,6 +11,19 @@ class UserModel(BaseModel):
     username: str
     email: str
     primary_account: str = ""
+
+
+def _check_duplicates(**user_data):
+    #       проверка на использование занятого username или email
+    new_username = user_data.get('username', None)
+    new_email = user_data.get('email', None)
+
+    if new_username:
+        if file_contains_key_value(PATH_TO_USERS, 'username', new_username):
+            raise Exception(f'Username "{new_username}" already in use')
+    if new_email:
+        if file_contains_key_value(PATH_TO_USERS, 'email', new_email):
+            raise Exception(f'Email "{new_email}" already registered by another user')
 
 
 class User:
@@ -57,14 +70,9 @@ class User:
         self.__data = UserModel(**user_data)
         self.__authorised = True
 
-    def register(self, user_data: UserModel):
-        #       проверка на использование занятого username или email
-        if file_contains_key_value(PATH_TO_USERS, 'username', user_data.username):
-            raise Exception(f'Username "{user_data.username}" already in use')
-        if file_contains_key_value(PATH_TO_USERS, 'email', user_data.email):
-            raise Exception(f'Email "{user_data.email}" already registered by another user')
-
-        self.__data = user_data
+    def register(self, **user_data):
+        _check_duplicates(**user_data)
+        self.__data = UserModel(**user_data)
         self.__uid = self.__make_uid(self.__data.username, self.__data.password_hash)
         if self.__uid == '':
             raise Exception("Log in information should be specified")
@@ -75,6 +83,9 @@ class User:
     def update_profile(self, **fields_to_update):
         if not self.__authorised:
             raise Exception("User is not authorised for this operation")
+
+        _check_duplicates(**fields_to_update)
+
         updated_model = self.__data.model_dump()
         try:
             for key, value in fields_to_update.items():
@@ -86,35 +97,12 @@ class User:
         self.__data = UserModel(**updated_model)
         self.__uid = self.__make_uid(self.__data.username, self.__data.password_hash)
 
-        # If password changed - User.uid() changes as well.
+        # If password changed - __uid() changes as well.
+        # delete record with previous __uid()
         if prev_uid != self.__uid:
-            self.__uid_changed(prev_uid)
+            delete_from_file(PATH_TO_USERS, prev_uid)
 
         self.__save()
-
-    def __uid_changed(self, prev_uid):
-        delete_from_file(PATH_TO_USERS, prev_uid)
-
-        # Account file named with User.uid should be renamed.
-        rename_file(
-            PATH_TO_ACCOUNTS + prev_uid + '.json',
-            PATH_TO_ACCOUNTS + self.__uid + '.json'
-        )
-
-        # owner_uid should be replaced with new one for all accounts in user accounts file
-        from services.account_management import load_account
-        while True:
-            acc_uid = file_contains_key_value(
-                PATH_TO_ACCOUNTS + self.__uid + '.json',
-                'owner_uid', prev_uid
-            )
-            if acc_uid is None:
-                break
-
-            account = load_account(self.__uid, acc_uid)
-            account.update(owner_uid=self.__uid)
-
-
 
     def logout(self):
         self.__authorised = False

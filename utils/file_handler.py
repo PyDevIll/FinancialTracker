@@ -14,7 +14,7 @@ class FileHandlerNoUID(FileHandlerException):
     pass
 
 
-def __read_entire_file_as_dict(filename) -> dict:
+def read_entire_file_as_dict(filename) -> dict:
     try:
         with open(filename, 'r', encoding='utf8') as f:
             try:
@@ -27,7 +27,7 @@ def __read_entire_file_as_dict(filename) -> dict:
 
 def save_to_file(filename: str, uid: str, data_dict: dict):
     try:
-        contents = __read_entire_file_as_dict(filename)
+        contents = read_entire_file_as_dict(filename)
     except FileHandlerNoFile:
         contents = {}
 
@@ -41,7 +41,7 @@ def save_to_file(filename: str, uid: str, data_dict: dict):
 
 
 def read_from_file(filename: str, uid: str) -> dict:
-    contents = __read_entire_file_as_dict(filename)
+    contents = read_entire_file_as_dict(filename)
 
     if uid not in contents:
         raise FileHandlerNoUID(f'UID "{uid}" is not present in file')
@@ -50,7 +50,7 @@ def read_from_file(filename: str, uid: str) -> dict:
 
 
 def delete_from_file(filename: str, uid: str):
-    contents = __read_entire_file_as_dict(filename)
+    contents = read_entire_file_as_dict(filename)
     if uid not in contents:
         raise FileHandlerNoUID(f'UID "{uid}" is not present in file')
 
@@ -64,7 +64,7 @@ def file_contains_key_value(filename: str, key, value):
         Возвращает uid где встречается пара ключ-значение.
         Для проверки существования login'а или email'а при регистрации нового пользователя.
     """
-    contents = __read_entire_file_as_dict(filename)
+    contents = read_entire_file_as_dict(filename)
     for _uid in contents:
         _value = contents[_uid].get(key, None)
         if _value == value:
@@ -73,7 +73,7 @@ def file_contains_key_value(filename: str, key, value):
 
 
 def rename_file(filename: str, new_filename: str):
-    contents = __read_entire_file_as_dict(filename)
+    contents = read_entire_file_as_dict(filename)
     with open(new_filename, 'w', encoding='utf8') as f:
         f.write(json.dumps(contents, indent=4))
 

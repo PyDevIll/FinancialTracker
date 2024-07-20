@@ -3,7 +3,7 @@ from enum import Enum
 from uuid import uuid4
 from config.settings import PATH_TO_ACCOUNTS
 
-from utils.file_handler import read_from_file, save_to_file, delete_from_file, rename_file
+from utils.file_handler import read_from_file, save_to_file
 from utils.file_handler import FileHandlerException
 
 

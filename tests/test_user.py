@@ -1,6 +1,6 @@
 import pytest
 
-from models.user import User, UserModel
+from models.user import User
 from hashlib import md5
 
 user_list = [User(), User()]
@@ -35,7 +35,7 @@ def users():
 def test_user_register_login(login_info, users):
     for n, user in enumerate(users):
         #       User.register()
-        user.register(UserModel(**login_info[n]))
+        user.register(**login_info[n])
         assert user.data().username == login_info[n]["username"]
         assert user.data().password_hash == login_info[n]["password_hash"]
         assert user.data().email == login_info[n]["email"]
@@ -50,7 +50,7 @@ def test_user_register_login(login_info, users):
         # register user with same username
     new_user = User()
     with pytest.raises(Exception) as e:
-        new_user.register(UserModel(**login_info[2]))
+        new_user.register(**login_info[2])
 
     assert str(e.value) == f'Username "{login_info[2]["username"]}" already in use'
     assert not new_user.is_authorised()
@@ -61,7 +61,7 @@ def test_user_register_login(login_info, users):
     login_info[2]["username"] = "Jane Dowe"
     login_info[2]["email"] = "me@gmail.com"
     with pytest.raises(Exception) as e:
-        new_user.register(UserModel(**login_info[2]))
+        new_user.register(**login_info[2])
 
     assert str(e.value) == f'Email "{login_info[2]["email"]}" already registered by another user'
     assert not new_user.is_authorised()
