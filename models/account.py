@@ -1,10 +1,15 @@
-from pydantic import BaseModel
+import pydantic
+from pydantic import BaseModel, ValidationError
 from enum import Enum
 from uuid import uuid4
 from config.settings import PATH_TO_ACCOUNTS
 
 from utils.file_handler import read_from_file, save_to_file
 from utils.file_handler import FileHandlerException
+
+
+class AccountError(Exception):
+    ...
 
 
 class Currency(str, Enum):
@@ -39,7 +44,7 @@ class Account:
         try:
             account_model = read_from_file(PATH_TO_ACCOUNTS + self.__data.owner_username + '_accounts.json', uid)
         except FileHandlerException as e:
-            raise Exception(f'Cannot load account info: "{e}"')
+            raise AccountError(f'Cannot load account info: "{e}"')
 
         self.__data = AccountModel(**account_model)
 
@@ -47,7 +52,8 @@ class Account:
         return self.__data.uid
 
     def data(self):
-        return self.__data
+        # Возвращаем не исходный объект, а копию
+        return AccountModel(**self.__data.model_dump())
 
     def owner(self):
         return self.__data.owner_uid
@@ -58,25 +64,31 @@ class Account:
             for key, value in fields_to_update.items():
                 updated_model[key] = value
         except KeyError:
-            raise Exception("Trying to update unexisted account field")
+            raise AccountError("Trying to update unexisted account field")
 
-        self.__data = AccountModel(**updated_model)
+        try:
+            self.__data = AccountModel(**updated_model)
+        except ValidationError:
+            raise AccountError("Wrong data format")
+
         self.save()
 
     def add_income(self, amount):
         if amount <= 0:
-            raise Exception("Invalid amount. Should be greater than zero", amount)
+            raise AccountError("Invalid amount. Should be greater than zero", amount)
         self.__data.balance += amount
 
     def add_expense(self, amount):
         if amount <= 0:
-            raise Exception("Invalid amount. Should be greater than zero", amount)
+            raise AccountError("Invalid amount. Should be greater than zero", amount)
         if self.__data.balance < amount:
-            raise Exception("Insufficient funds", amount)
+            raise AccountError("Insufficient funds", amount)
         self.__data.balance -= amount
 
     def get_balance(self):
         return self.__data.balance
 
-    def transfer(self, other_account_uid, amount):
-        ...
+    def transfer(self, other_account, amount):
+        self.add_expense(amount)
+        other_account.add_income(amount)
+

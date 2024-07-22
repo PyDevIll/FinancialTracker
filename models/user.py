@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from hashlib import md5
 from config.settings import PATH_TO_USERS
 
@@ -6,10 +6,14 @@ from utils.file_handler import read_from_file, save_to_file, delete_from_file, f
 from utils.file_handler import FileHandlerException
 
 
+class UserError(Exception):
+    ...
+
+
 class UserModel(BaseModel):
     password_hash: str
     username: str
-    email: str = ''
+    email: str = ''     # TODO: Check email format here somehow with pydantic
     primary_account: str = ""
 
 
@@ -20,10 +24,10 @@ def _check_duplicates(**user_data):
 
     if new_username:
         if file_contains_key_value(PATH_TO_USERS, 'username', new_username):
-            raise Exception(f'Username "{new_username}" already in use')
+            raise UserError(f'Username "{new_username}" already in use')
     if new_email:
         if file_contains_key_value(PATH_TO_USERS, 'email', new_email):
-            raise Exception(f'Email "{new_email}" already registered by another user')
+            raise UserError(f'Email "{new_email}" already registered by another user')
 
 
 class User:
@@ -58,35 +62,40 @@ class User:
         return self.__data.primary_account
 
     def data(self):
-        return self.__data
+        # возвращаем не исходный объект, а копию
+        return UserModel(**self.__data.model_dump())
 
     def is_authorised(self):
         return self.__authorised
 
     def login(self):
         if self.__uid == '':
-            raise Exception("Log in information is not specified")
+            raise UserError("Log in information is not specified")
         try:
             user_data = read_from_file(PATH_TO_USERS, self.__uid)
         except FileHandlerException as e:
-            raise Exception(f'Cannot log in user {self.__data.username}: "{e}"')
+            raise UserError(f'Cannot log in user {self.__data.username}: "{e}"')
 
         self.__data = UserModel(**user_data)
         self.__authorised = True
 
     def register(self, **user_data):
         _check_duplicates(**user_data)
-        self.__data = UserModel(**user_data)
+        try:
+            self.__data = UserModel(**user_data)
+        except ValidationError:
+            raise UserError("Wrong data format")
+
         self.__uid = self.__make_uid(self.__data.username, self.__data.password_hash)
         if self.__uid == '':
-            raise Exception("Log in information should be specified")
+            raise UserError("Log in information should be specified")
 
         self.__authorised = True
         self.__save()
 
     def update_profile(self, **fields_to_update):
         if not self.__authorised:
-            raise Exception("User is not authorised for this operation")
+            raise UserError("User is not authorised for this operation")
 
         _check_duplicates(**fields_to_update)
 
@@ -95,10 +104,14 @@ class User:
             for key, value in fields_to_update.items():
                 updated_model[key] = value
         except KeyError:
-            raise Exception("Trying to update unexisted profile field")
+            raise UserError(f"Trying to update unexisted profile field ({str(e)})")
 
         prev_uid = self.__uid
-        self.__data = UserModel(**updated_model)
+        try:
+            self.__data = UserModel(**updated_model)
+        except ValidationError as e:
+            raise UserError(f"Wrong data format ({str(e)})")
+
         self.__uid = self.__make_uid(self.__data.username, self.__data.password_hash)
 
         # If password changed - __uid() changes as well.
