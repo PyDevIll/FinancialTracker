@@ -13,11 +13,12 @@ class TransactionError(Exception):
 
 class TransactionType(str, Enum):
     income = 'in',
-    expence = 'out'
+    expense = 'out'
 
 
 class TransactionModel(BaseModel):
     account_id: str
+    user_uid: str
     amount: PositiveFloat = 0.0
     transaction_type: TransactionType = TransactionType.income
     transaction_id: str = ''
@@ -41,14 +42,14 @@ class Transaction:
 
     def record(self):
         save_to_file(
-            PATH_TO_TRANSACTIONS + self.__data.account_id + '_transactions.json',
+            PATH_TO_TRANSACTIONS + self.__data.user_uid + '_transactions.json',
             self.__data.date,
             self.__data.model_dump()
         )
 
     def load(self):
         transaction_model = read_from_file(
-            PATH_TO_TRANSACTIONS + self.__data.account_id + '_transactions.json',
+            PATH_TO_TRANSACTIONS + self.__data.user_uid + '_transactions.json',
             self.__data.date
         )
         self.__data = TransactionModel(**transaction_model)

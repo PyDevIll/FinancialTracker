@@ -18,8 +18,8 @@ class Currency(str, Enum):
 
 
 class AccountModel(BaseModel):
-    owner_uid: str
-    owner_username: str = ''
+    owner_uid: str = ''
+    owner_username: str
     uid: str = ''
     name: str = ''
     balance: float = 0.0

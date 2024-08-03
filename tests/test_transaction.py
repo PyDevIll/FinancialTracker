@@ -7,6 +7,7 @@ from datetime import datetime
 def test_transaction_create():
     trans = Transaction(
         account_id='abc123-id',
+        user_uid='md5hash_of_concatenated_loggedin_user_name_and_passwordhash_string',
         amount=100.50,
         transaction_type=TransactionType.income
     )
@@ -20,21 +21,26 @@ def test_transaction_create():
     with pytest.raises(TransactionError):
         trans = Transaction(
             account_id='an01h39-id',
+            user_uid='md5hash_of_concatenated_loggedin_user_name_and_passwordhash_string',
             amount=-1,
             transaction_type='in'
         )
 
 
 def test_transaction_save_load():
+    # saving
     trans = Transaction(
         account_id='abc123-id',
+        user_uid='md5hash_of_concatenated_loggedin_user_name_and_passwordhash_string',
         amount=100_500,
         transaction_type=TransactionType.income
     )
     trans.record()
 
+    # loading
     # date= and account_id= are used to find transaction in file
     new_trans = Transaction(
+        user_uid='md5hash_of_concatenated_loggedin_user_name_and_passwordhash_string',
         account_id='abc123-id',
         date=trans.data().date
     )
@@ -46,6 +52,7 @@ def test_transaction_save_load():
     # fully identical transactions new_trans and other_trans
     # equality test should fail -> different amounts
     other_trans = Transaction(
+        user_uid='md5hash_of_concatenated_loggedin_user_name_and_passwordhash_string',
         account_id='abc123-id',
         amount=100_500.50,
         transaction_type=TransactionType.income

@@ -13,6 +13,12 @@ def _add_as_active(account: Account):
     active_accounts[account.owner()][account.uid()] = account
 
 
+def get_account_by_id(acc_id) -> Account:
+    for user in active_accounts.keys():
+        if acc_id in active_accounts[user]:
+            return active_accounts[user][acc_id]
+
+
 def create_account(user_uid, username, name, currency: Currency = Currency.RUR) -> Account:
     account = Account(AccountModel(
         owner_uid=user_uid,
@@ -28,6 +34,7 @@ def create_account(user_uid, username, name, currency: Currency = Currency.RUR) 
 
 
 def load_account(user_uid, username, account_uid) -> Account:
+    # user_uid needed to find active account in active_accounts[user_uid][acc_uid]
     account = Account(AccountModel(
         owner_uid=user_uid,
         owner_username=username

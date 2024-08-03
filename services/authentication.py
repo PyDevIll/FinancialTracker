@@ -1,5 +1,5 @@
 from models.user import User
-from services.account_management import create_account, load_account, unload_user_accounts, update_user_accounts
+from services.account_management import create_account, load_all_accounts, unload_user_accounts, update_user_accounts
 
 # Dict that holds User instances for logged in users. Indexed by [User.uid]
 active_users = {}
@@ -18,7 +18,9 @@ def login(username, password_hash) -> User:
     active_users[user.uid()] = user
 
     # load associated primary account
-    load_account(user.uid(), user.username(), user.primary_account())
+    # load_account(user.uid(), user.username(), user.primary_account())
+
+    load_all_accounts(user.uid(), username)
 
     return user
 
